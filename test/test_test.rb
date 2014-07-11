@@ -23,6 +23,7 @@ class TestMyTest < Test::Unit::TestCase
 
     should 'hash a kmer' do
       assert_equal 1, hashing("AAAAC", 0)
+      assert_equal 27, hashing("ACGT", 0)
     end
   end
 end

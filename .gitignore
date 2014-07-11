@@ -1,6 +1,7 @@
 coverage
 tmp
 Gemfile.lock
+*gem
 *~
 *so
 Makefile

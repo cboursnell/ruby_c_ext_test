@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+#
+# digital normalisation using ruby cm-sketch
+#
+
+require 'cm-sketch'
+require 'trollop'
+
+
+opts = Trollop::options do
+  banner <<-EOS
+
+Diginorm v0.2 by Chris Boursnell <cmb211@cam.ac.uk>
+
+Digital Normalisation by median
+Totally ripped off from Titus Brown (http://khmer.readthedocs.org/en/v1.1/)
+
+USAGE:
+diginorm <options>
+
+OPTIONS:
+
+EOS
+  opt :left,
+      "fastq file",
+      :required => true,
+      :type => String
+
+  opt :right,
+      "second fastq file",
+      :required => true,
+      :type => String
+
+  opt :output,
+      "output fastq file",
+      :required => true,
+      :type => String
+
+  opt :k,
+      "size of kmers to use",
+      :default => 21,
+      :type => :int
+
+  opt :buckets,
+      "number of buckets",
+      :default => 4,
+      :type => :int
+
+  opt :bucket_size,
+      "size of buckets",
+      :short => 's',
+      :default => 10000,
+      :type => :int
+
+  opt :cutoff,
+      "cutoff coverage",
+      :default => 20,
+      :type => :int
+end
+
+Trollop::die :left, "must exist" if !File.exist?(opts[:left])
+Trollop::die :right, "must exist" if !File.exist?(opts[:right])
+
+cms = MyTest.new(opts.buckets, opts.bucket_size)
