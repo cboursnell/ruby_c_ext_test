@@ -17,8 +17,12 @@ class TestMyTest < Test::Unit::TestCase
       assert_equal 10, add(3,7)
     end
 
-    should 'subtract two numbers together' do
-      assert_equal 4, subtract(7,3)
+    should 'get the answer' do
+      assert_equal 10, get(0)
+    end
+
+    should 'hash a kmer' do
+      assert_equal 1, hashing("AAAAC", 0)
     end
   end
 end
