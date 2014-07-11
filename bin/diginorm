@@ -78,9 +78,6 @@ def ticker(i,speed,j)
   end
 end
 
-kmers = []
-counts = []
-count=1
 File.open("#{opts.output}.1.fastq", "w") do |out1|
   File.open("#{opts.output}.2.fastq", "w") do |out2|
     left = File.open(opts.left)
@@ -95,29 +92,35 @@ File.open("#{opts.output}.1.fastq", "w") do |out1|
       seq2 = right.readline
       plus2 = right.readline
       quals2 = right.readline
-      puts count
-      kmers.clear
-      counts.clear
-      (0..seq1.length-k-1).each do |i|
-        kmers << seq1[i..i+k-1]
+      if seq1.length > k+2
+        array1 = cms.median(seq1)
+        median1 = array1.sort[array1.length/2+1]
+      else
+        median1 = 0
       end
-      (0..seq2.length-k-1).each do |i|
-        kmers << seq2[i..i+k-1]
+      if seq2.length > k+2
+        array2 = cms.median(seq2)
+        median2 = array2.sort[array2.length/2+1]
+      else
+        median2 = 0
       end
+      ticker(count, 3, median1)
+      if median1 and median2
+        if median1 <= opts.cutoff or median2 <= opts.cutoff
+          cms.add(seq1)
+          cms.add(seq2)
 
-      kmers.each do |kmer|
-        counts << cms.get(kmer)
+          out1.write "#{name1}#{seq1}+\n#{quals1}"
+          out2.write "#{name2}#{seq2}+\n#{quals2}"
+        end
+      else
+        puts "error"
+        p array1
+        p array2
+        puts " #{seq1}"
+        puts " #{seq2}"
+        puts "__end"
       end
-      median = counts.sort[counts.length/2+1]
-      ticker(count, 2, median)
-      if median <= opts.cutoff
-        cms.add(seq1)
-        cms.add(seq2)
-
-        out1.write "#{name1}#{seq1}+\n#{quals1}"
-        out2.write "#{name2}#{seq2}+\n#{quals2}"
-      end
-
       name1 = left.readline rescue nil
       name2 = right.readline rescue nil
       count+=1
