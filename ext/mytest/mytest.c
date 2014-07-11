@@ -1,4 +1,5 @@
 #include "ruby.h"
+#include <stdlib.h>
 
 // Defining a space for information and references about the module to be
 // stored internally
@@ -20,6 +21,7 @@ long set_len;
 int set_count;
 int *set;
 int kmer_size;
+int *offsets;
 
 // The initialization method for this module
 void Init_mytest() {
@@ -41,8 +43,14 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
     set_len = NUM2INT(size);
     set_count = NUM2INT(count);
     set = malloc(set_len * set_count * sizeof(int));
+    offsets = malloc(set_count * sizeof(int));
     for (i = 0; i < set_len * set_count; i++) {
         set[i] = 0;
+    }
+    for (i = 0; i < set_count; i++) {
+        srand(i+1);
+        offsets[i] = rand() % set_len;
+        // printf("setting up offsets = %i \n", offsets[i]);
     }
     kmer_size = NUM2INT(ks);
     return Qnil;
@@ -96,16 +104,15 @@ VALUE method_get(VALUE self, VALUE kmer) {
 
 VALUE method_median(VALUE self, VALUE read) {
     char * str;
-    int * counts;
     int b, start,len,v=-1,p;
     long h;
+    VALUE array = rb_ary_new();
     len = RSTRING_LEN(read);
     str = StringValueCStr(read);
-    counts = malloc(len-kmer_size+1 * sizeof(long));
-    for (start = 0; start < len-kmer_size+1; start++) {
+    len = len - kmer_size + 1;
+    for (start = 0; start < len; start++) {
         for (b = 0; b < set_count; b++) {
             h = hash(str, start, kmer_size, b);
-            // get minimum count
             if (v < 0) {
                 v = set[b*set_len+h];
             } else {
@@ -114,16 +121,15 @@ VALUE method_median(VALUE self, VALUE read) {
                     v = p;
                 }
             }
-            counts[start]=v;
         }
+        rb_ary_push(array, INT2NUM(v));
     }
-    return 0;
+    return array;
 }
 
 long hash(char * str, int start, int len, int n) {
-    int r,i;
+    int i;
     long hash=0, hash2=0;
-    srand(n+1);
     for(i = start; i < start+len; i++) {
         hash = hash << 2;
         if (str[i]=='A') {
@@ -135,6 +141,7 @@ long hash(char * str, int start, int len, int n) {
         } else if (str[i]=='T') {
             hash += 3;
         }
+        // hash = hash % set_len;
     }
     // calculate reverse complement hashing function
     for(i = start+len-1;i>=start; i--) {
@@ -148,10 +155,10 @@ long hash(char * str, int start, int len, int n) {
         } else if (str[i]=='T') {
             hash2 += 0;
         }
+        // hash2 = hash2 % set_len;
     }
-    r = rand();
-    hash += r;
-    hash2 += r;
+    hash += offsets[n];
+    hash2 += offsets[n];
     if (hash2 > hash) {
         hash2 = hash2 % set_len;
         return hash2;
