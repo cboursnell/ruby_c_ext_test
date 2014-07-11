@@ -7,7 +7,7 @@ class TestMyTest < Test::Unit::TestCase
   context 'my_test' do
 
     setup do
-      @test = MyTest.new(7, 100)
+      @test = MyTest.new(7, 100, 4)
     end
 
     teardown do
@@ -23,9 +23,9 @@ class TestMyTest < Test::Unit::TestCase
     end
 
     should 'hash a kmer' do
-      assert_equal 87, @test.hashing("AAAAAAC", 0)
-      assert_equal 19, @test.hashing("ACGTGCA", 0)
-      assert_equal 12, @test.hashing("TTTCCCA", 0)
+      assert_equal 70, @test.hashing("AAAAAAC", 0)
+      assert_equal 2, @test.hashing("ACGTGCA", 0)
+      assert_equal 95, @test.hashing("TTTCCCA", 0)
     end
   end
 end
