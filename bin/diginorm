@@ -78,6 +78,7 @@ def ticker(i,speed,j)
   end
 end
 
+count=0
 File.open("#{opts.output}.1.fastq", "w") do |out1|
   File.open("#{opts.output}.2.fastq", "w") do |out2|
     left = File.open(opts.left)
@@ -104,7 +105,7 @@ File.open("#{opts.output}.1.fastq", "w") do |out1|
       else
         median2 = 0
       end
-      ticker(count, 3, median1)
+      ticker(count, 4, median1)
       if median1 and median2
         if median1 <= opts.cutoff or median2 <= opts.cutoff
           cms.add(seq1)
