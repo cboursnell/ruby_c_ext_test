@@ -12,8 +12,9 @@ VALUE TestInit(VALUE, VALUE, VALUE, VALUE);
 VALUE method_add(VALUE, VALUE);
 VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
+VALUE method_median(VALUE self, VALUE read);
 
-int hash(char *, int, int, int);
+long hash(char *, int, int, int);
 
 long set_len;
 int set_count;
@@ -27,6 +28,7 @@ void Init_mytest() {
     rb_define_method(MyTest, "add", method_add, 1);
     rb_define_method(MyTest, "get", method_get, 1);
     rb_define_method(MyTest, "hashing", method_hashing, 2);
+    rb_define_method(MyTest, "median", method_median, 1);
 }
 
 // called when creating a new class
@@ -50,7 +52,8 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
 // kmerise the string, hash each kmer and add to set
 VALUE method_add(VALUE self, VALUE read) {
     char * str;
-    int b,i,h,len;
+    int b,i,len;
+    long h;
     h = 0;
     len = RSTRING_LEN(read);
     str = StringValueCStr(read);
@@ -66,7 +69,8 @@ VALUE method_add(VALUE self, VALUE read) {
 // This is the method we added to test out passing parameters
 VALUE method_get(VALUE self, VALUE kmer) {
     char * str;
-    int b,v=-1,p,len,h;
+    int b,v=-1,p,len;
+    long h;
     len = RSTRING_LEN(kmer);
     str = StringValueCStr(kmer);
     // inPlaceReverse(str, kmer_size);
@@ -90,8 +94,35 @@ VALUE method_get(VALUE self, VALUE kmer) {
     }
 }
 
-int hash(char * str, int start, int len, int n) {
-    int r,i,hash=0,hash2=0;
+VALUE method_median(VALUE self, VALUE read) {
+    char * str;
+    int * counts;
+    int b, start,len,v=-1,p;
+    long h;
+    len = RSTRING_LEN(read);
+    str = StringValueCStr(read);
+    counts = malloc(len-kmer_size+1 * sizeof(long));
+    for (start = 0; start < len-kmer_size+1; start++) {
+        for (b = 0; b < set_count; b++) {
+            h = hash(str, start, kmer_size, b);
+            // get minimum count
+            if (v < 0) {
+                v = set[b*set_len+h];
+            } else {
+                p = set[b*set_len+h];
+                if (p < v) {
+                    v = p;
+                }
+            }
+            counts[start]=v;
+        }
+    }
+    return 0;
+}
+
+long hash(char * str, int start, int len, int n) {
+    int r,i;
+    long hash=0, hash2=0;
     srand(n+1);
     for(i = start; i < start+len; i++) {
         hash = hash << 2;
@@ -133,7 +164,7 @@ int hash(char * str, int start, int len, int n) {
 VALUE method_hashing(VALUE self, VALUE kmer, VALUE n) {
     char * str;
     int len;
-    int output;
+    long output;
     int b;
     len = RSTRING_LEN(kmer);
     str = StringValueCStr(kmer);
