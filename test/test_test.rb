@@ -7,23 +7,25 @@ class TestMyTest < Test::Unit::TestCase
   context 'my_test' do
 
     setup do
-
+      @test = MyTest.new(7, 100)
     end
 
     teardown do
     end
 
-    should 'add two numbers together' do
-      assert_equal 10, add(3,7)
+    should 'add read to cmsketch' do
+      assert_equal 1, @test.add("ACGTACGTACGT")
     end
 
-    should 'get the answer' do
-      assert_equal 10, get(0)
+    should 'get the count of a kmer' do
+      @test.add("GTCGAGGCCGTCAGGCAT")
+      assert_equal 1, @test.get("GTCAGAG") # TCTGACG
     end
 
     should 'hash a kmer' do
-      assert_equal 1, hashing("AAAAC", 0)
-      assert_equal 27, hashing("ACGT", 0)
+      assert_equal 87, @test.hashing("AAAAAAC", 0)
+      assert_equal 19, @test.hashing("ACGTGCA", 0)
+      assert_equal 12, @test.hashing("TTTCCCA", 0)
     end
   end
 end
