@@ -1,4 +1,6 @@
 coverage
+tmp
+Gemfile.lock
 *~
 *so
 Makefile
