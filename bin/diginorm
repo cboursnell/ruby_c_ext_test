@@ -58,7 +58,8 @@ EOS
       :type => :int
 end
 
-# Trollop::die :left, "must exist" if !File.exist?(opts[:left])
-# Trollop::die :right, "must exist" if !File.exist?(opts[:right])
+Trollop::die :left, "must exist" if !File.exist?(opts[:left])
+Trollop::die :right, "must exist" if !File.exist?(opts[:right])
 
-cms = MyTest.new(opts.buckets, opts.bucket_size)
+cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets)
+
