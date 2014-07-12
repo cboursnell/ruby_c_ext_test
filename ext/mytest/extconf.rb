@@ -4,6 +4,8 @@ require 'mkmf'
 # Give it a name
 extension_name = 'mytest/mytest'
 
+$CFLAGS = '-Wall -O3' # O for optimise
+
 # The destination
 dir_config(extension_name)
 
