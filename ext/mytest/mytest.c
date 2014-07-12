@@ -10,10 +10,10 @@ void Init_mytest();
 
 // methods are prefixed by 'method_' here
 VALUE TestInit(VALUE, VALUE, VALUE, VALUE);
-VALUE method_add(VALUE, VALUE);
+VALUE method_radd(VALUE, VALUE);
 VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
-VALUE method_median(VALUE self, VALUE read);
+VALUE method_rmedian(VALUE self, VALUE read);
 VALUE method_kmer_size(VALUE self);
 
 long hash(char *, int, int, int);
@@ -27,11 +27,11 @@ int *offsets;
 // The initialization method for this module
 void Init_mytest() {
     MyTest = rb_define_class("MyTest", rb_cObject);
-    rb_define_method(MyTest, "initialize", TestInit, 3);
-    rb_define_method(MyTest, "add", method_add, 1);
+    rb_define_method(MyTest, "initialize", TestInit, 4);
+    rb_define_method(MyTest, "radd", method_radd, 1);
     rb_define_method(MyTest, "get", method_get, 1);
     rb_define_method(MyTest, "hashing", method_hashing, 2);
-    rb_define_method(MyTest, "median", method_median, 1);
+    rb_define_method(MyTest, "rmedian", method_rmedian, 1);
     rb_define_method(MyTest, "kmer_size", method_kmer_size, 0);
 }
 
@@ -60,7 +60,7 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
 
 // takes in a fastq read sequence eq 100 bases
 // kmerise the string, hash each kmer and add to set
-VALUE method_add(VALUE self, VALUE read) {
+VALUE method_radd(VALUE self, VALUE read) {
     char * str;
     int b,i,len;
     long h;
@@ -104,8 +104,46 @@ VALUE method_get(VALUE self, VALUE kmer) {
     }
 }
 
+uint8_t median(char * read) {
+    int b,start,len,pos;
+    uint8_t v = 255,p;
+    long h;
+    len = strlen(read) - kmer_size;
+    for (start = 0; start < len; start++) {
+        for (b = 0; b < set_count; b++) {
+            h = hash(read, start, kmer_size, b);
+            p = set[b*set_len+h];
+            if (p < v) { // this is the min part of count-min-sketch
+                v = p;
+            }
+        }
+        counts[start] = v;
+    }
+    // insertion sort
+    uint8_t tmp; // temporary storage while swapping
+    uint8_t smallest; // smallest value from counts found
+    //pos; // position of smallest value found
+    for (start = 0; start < len; start++) {
+        smallest = 255;
+        pos=0;
+        for (b = start; b < len; b++) {
+            if (counts[b] < smallest) {
+                smallest = counts[b];
+                pos = b;
+            }
+        }
+        // swap element in position start and position pos
+        // printf("swapping %i and %i \n", start, pos);
+        tmp = counts[start];
+        counts[start] = counts[pos];
+        counts[pos] = tmp;
+    }
+    b = (int)len/2;
+    return counts[b];
+}
+
 // returns a ruby array of counts for each kmer in a read
-VALUE method_median(VALUE self, VALUE read) {
+VALUE method_rmedian(VALUE self, VALUE read) {
     char * str;
     int b, start,len,v=-1,p;
     long h;
