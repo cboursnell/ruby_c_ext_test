@@ -8,6 +8,7 @@ Gem::Specification.new do |gem|
   gem.email       = 'cmb211@cam.ac.uk'
   gem.files       = `git ls-files`.split("\n")
   gem.executables = "diginorm"
+  gem.extensions  = ["ext/mytest/extconf.rb"]
   gem.require_paths = %w( lib ext)
   gem.homepage    = 'http://rubygems.org/gems/mytest'
   gem.license     = 'MIT'
