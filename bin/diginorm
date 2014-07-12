@@ -58,6 +58,8 @@ EOS
       :type => :int
 end
 
+Trollop::die "Cutoff must be less than 255" if opts.cutoff >= 255
+
 cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets)
 k = opts.k
 
