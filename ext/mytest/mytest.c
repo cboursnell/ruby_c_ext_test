@@ -18,12 +18,16 @@ VALUE method_kmer_size(VALUE self);
 VALUE method_run(VALUE self, VALUE, VALUE);
 
 long hash(char *, int, int, int);
+uint8_t median(char *);
+void add(char *);
 
 long set_len;
 int set_count;
 uint8_t *set;
 int kmer_size;
 int *offsets;
+int *counts;
+int cutoff;
 
 // The initialization method for this module
 void Init_mytest() {
@@ -34,19 +38,25 @@ void Init_mytest() {
     rb_define_method(MyTest, "hashing", method_hashing, 2);
     rb_define_method(MyTest, "rmedian", method_rmedian, 1);
     rb_define_method(MyTest, "kmer_size", method_kmer_size, 0);
+    rb_define_method(MyTest, "run", method_run, 2);
 }
 
 // called when creating a new class
 // ks = size of kmer to use in bases
 // size = length of array
 // count = number of buckets
-VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
+VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count, VALUE cut)
 {
     int i;
     set_len = NUM2INT(size);
     set_count = NUM2INT(count);
-    set = malloc(set_len * set_count * sizeof(int));
+    cutoff = NUM2INT(cut);
+    set = malloc(set_len * set_count * sizeof(uint8_t));
     offsets = malloc(set_count * sizeof(int));
+    counts = malloc(100 * sizeof(int));
+    for (i = 0; i < 100; i++) {
+        counts[i] = 0;
+    }
     for (i = 0; i < set_len * set_count; i++) {
         set[i] = 0;
     }
@@ -57,6 +67,115 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
     }
     kmer_size = NUM2INT(ks);
     return Qnil;
+}
+
+// take in two input files and export two output files
+VALUE method_run(VALUE self, VALUE left, VALUE right) {
+    int med1, med2;
+    FILE *lfp;
+    FILE *rfp;
+    FILE *lout;
+    FILE *rout;
+    char * line_name1 = NULL;
+    char * line_seq1 = NULL;
+    char * line_plus1 = NULL;
+    char * line_qual1 = NULL;
+    char * line_name2 = NULL;
+    char * line_seq2 = NULL;
+    char * line_plus2 = NULL;
+    char * line_qual2 = NULL;
+    char * filename_left;
+    char * filename_right;
+    char * outname_left;
+    char * outname_right;
+    size_t len;
+    filename_left = StringValueCStr(left);
+    filename_right = StringValueCStr(right);
+    cutoff = NUM2INT(c);
+
+    outname_left = strdup(filename_left);
+    outname_right = strdup(filename_right);
+
+    strcat(outname_left, ".out");
+    strcat(outname_right, ".out");
+
+    // printf("in  left  = %s \n", filename_left);
+    // printf("in  right = %s \n", filename_right);
+    // printf("out  left  = %s \n", outname_left);
+    // printf("out  right = %s \n", outname_right);
+
+    lfp = fopen(filename_left, "r");
+    rfp = fopen(filename_right, "r");
+
+    if (lfp == NULL) {
+      fprintf(stderr, "Can't open left read file\n");
+      exit(1);
+    }
+    if (rfp == NULL) {
+      fprintf(stderr, "Can't open right read file\n");
+      exit(1);
+    }
+
+    lout = fopen(outname_left, "w");
+    rout = fopen(outname_right, "w");
+    if (lout == NULL) {
+        printf("Error opening left output file for writing\n");
+        exit(1);
+    }
+    if (rout == NULL) {
+        printf("Error opening right output file for writing\n");
+        exit(1);
+    }
+    while ( getline(&line_name1, &len, lfp) != -1 ) {
+        getline(&line_seq1, &len, lfp);
+        getline(&line_plus1, &len, lfp);
+        getline(&line_qual1, &len, lfp);
+        getline(&line_name2, &len, rfp);
+        getline(&line_seq2, &len, rfp);
+        getline(&line_plus2, &len, rfp);
+        getline(&line_qual2, &len, rfp);
+
+        med1 = median(line_seq1);
+        med2 = median(line_seq2);
+
+        if (med1 < cutoff || med2 < cutoff) {
+            add(line_seq1);
+            add(line_seq2);
+            fprintf(lout,"%s",line_name1);
+            fprintf(lout,"%s",line_seq1);
+            fprintf(lout,"%s",line_plus1);
+            fprintf(lout,"%s",line_qual1);
+
+            fprintf(rout,"%s",line_name2);
+            fprintf(rout,"%s",line_seq2);
+            fprintf(rout,"%s",line_plus2);
+            fprintf(rout,"%s",line_qual2);
+        }
+    }
+
+    fclose(lfp);
+    fclose(rfp);
+
+    fclose(lout);
+    fclose(rout);
+
+    return INT2NUM(0);
+}
+
+void add(char * read) {
+    int b, start, len;
+    long h;
+    uint8_t count;
+    len = strlen(read) - kmer_size;
+    for (start = 0; start < len; start++) {
+        for (b = 0; b < set_count; b++) {
+            h = hash(read, start, kmer_size, b);
+            count = set[b*set_len+h];
+            if (count < 254) {
+                set[b*set_len+h]++;
+            }
+        }
+    }
 }
 
 // takes in a fastq read sequence eq 100 bases
