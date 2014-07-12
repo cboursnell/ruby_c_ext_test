@@ -22,12 +22,12 @@ OPTIONS:
 
 EOS
   opt :left,
-      "fastq file",
+      "Comma separated list of fastq files (left)",
       :required => true,
       :type => String
 
   opt :right,
-      "second fastq file",
+      "Comma separated list of fastq files (right)",
       :required => true,
       :type => String
 
@@ -58,74 +58,76 @@ EOS
       :type => :int
 end
 
-Trollop::die :left, "must exist" if !File.exist?(opts[:left])
-Trollop::die :right, "must exist" if !File.exist?(opts[:right])
+# Trollop::die :left, "must exist" if !File.exist?(opts[:left])
+# Trollop::die :right, "must exist" if !File.exist?(opts[:right])
 
 cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets)
 k = opts.k
 
 def ticker(i,speed,j)
   n = 10**speed
-  if i <= 1
-    print " "*16
-    print "0"
-  end
-  if i % n == 0
-    print "\b"*17
-    string = "#{i} #{j}"
-    print " "*(17-string.length)
-    print string
+  if i % n == 0 and i > 0
+    str = "reads: #{i}"
+    str << " "*(19-str.length)
+    str << "kept: #{(100*j).round(1)}%" if !j.nan?
+    puts str
   end
 end
 
-count=0
+input = opts.left.split(",").zip(opts.right.split(","))
+
+input.each do |pair|
+  unless File.exist?("#{pair[0]}")
+    raise IOError.new("File not found: #{pair[0]}")
+  end
+  unless File.exist?("#{pair[1]}")
+    raise IOError.new("File not found: #{pair[1]}")
+  end
+end
+
+count = 0
+added = 0
 File.open("#{opts.output}.1.fastq", "w") do |out1|
   File.open("#{opts.output}.2.fastq", "w") do |out2|
-    left = File.open(opts.left)
-    right = File.open(opts.right)
-
-    name1 = left.readline rescue nil
-    name2 = right.readline rescue nil
-    while name1 != nil and name2 != nil
-      seq1 = left.readline
-      plus1 = left.readline
-      quals1 = left.readline
-      seq2 = right.readline
-      plus2 = right.readline
-      quals2 = right.readline
-      if seq1.length > k+2
-        array1 = cms.median(seq1)
-        median1 = array1.sort[array1.length/2+1]
-      else
-        median1 = 0
-      end
-      if seq2.length > k+2
-        array2 = cms.median(seq2)
-        median2 = array2.sort[array2.length/2+1]
-      else
-        median2 = 0
-      end
-      ticker(count, 4, median1)
-      if median1 and median2
-        if median1 <= opts.cutoff or median2 <= opts.cutoff
-          cms.add(seq1)
-          cms.add(seq2)
-
-          out1.write "#{name1}#{seq1}+\n#{quals1}"
-          out2.write "#{name2}#{seq2}+\n#{quals2}"
-        end
-      else
-        puts "error"
-        p array1
-        p array2
-        puts " #{seq1}"
-        puts " #{seq2}"
-        puts "__end"
-      end
+    input.each do |pair|
+      left = File.open(pair[0])
+      right = File.open(pair[1])
       name1 = left.readline rescue nil
       name2 = right.readline rescue nil
-      count+=1
-    end
+      while name1 != nil and name2 != nil
+        seq1 = left.readline
+        plus1 = left.readline
+        quals1 = left.readline
+        seq2 = right.readline
+        plus2 = right.readline
+        quals2 = right.readline
+        if seq1.length > k+2
+          array1 = cms.median(seq1)
+          median1 = array1.sort[array1.length/2+1]
+        else
+          median1 = 0
+        end
+        if seq2.length > k+2
+          array2 = cms.median(seq2)
+          median2 = array2.sort[array2.length/2+1]
+        else
+          median2 = 0
+        end
+        ticker(count, 5, added/count.to_f)
+        if median1 and median2
+          if median1 <= opts.cutoff or median2 <= opts.cutoff
+            cms.add(seq1)
+            cms.add(seq2)
 
+            out1.write "#{name1}#{seq1}+\n#{quals1}"
+            out2.write "#{name2}#{seq2}+\n#{quals2}"
+            added += 1
+          end
+        end
+        name1 = left.readline rescue nil
+        name2 = right.readline rescue nil
+        count += 1
+      end
+    end
   end
 end
