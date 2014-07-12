@@ -24,7 +24,7 @@ class MyTest
   end
 
   # runs
-  def run output, cutoff=20
+  def run_all output, cutoff=20
     if @left and @right
       File.open("#{output}.1.fastq", "w") do |out1|
         File.open("#{output}.2.fastq", "w") do |out2|
