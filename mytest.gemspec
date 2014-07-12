@@ -2,7 +2,7 @@ Gem::Specification.new do |gem|
   gem.name        = 'mytest'
   gem.version     = '0.1'
   gem.date        = '2014-07-11'
-  gem.summary     = "Test of Ruby and C in a gem"
+  gem.summary     = "Ruby implementation of digital normalisation"
   gem.description = "See summary"
   gem.authors     = ["Chris Boursnell"]
   gem.email       = 'cmb211@cam.ac.uk'

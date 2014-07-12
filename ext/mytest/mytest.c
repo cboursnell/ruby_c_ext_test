@@ -14,6 +14,7 @@ VALUE method_add(VALUE, VALUE);
 VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
 VALUE method_median(VALUE self, VALUE read);
+VALUE method_kmer_size(VALUE self);
 
 long hash(char *, int, int, int);
 
@@ -31,12 +32,13 @@ void Init_mytest() {
     rb_define_method(MyTest, "get", method_get, 1);
     rb_define_method(MyTest, "hashing", method_hashing, 2);
     rb_define_method(MyTest, "median", method_median, 1);
+    rb_define_method(MyTest, "kmer_size", method_kmer_size, 0);
 }
 
 // called when creating a new class
 // ks = size of kmer to use in bases
 // size = length of array
-// buckets = number of buckets
+// count = number of buckets
 VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count)
 {
     int i;
@@ -68,13 +70,13 @@ VALUE method_add(VALUE self, VALUE read) {
     for (i = 0; i < len-kmer_size+1; i++) {
         for(b = 0; b < set_count; b++) {
             h = hash(str, i, kmer_size, b);
-            set[b*set_len+h] += 1;
+            set[b*set_len+h] += 1; // TODO check for overflows
         }
     }
     return INT2NUM(1); // return 1 to indicate true /shrug
 }
 
-// This is the method we added to test out passing parameters
+// returns the count for a kmer
 VALUE method_get(VALUE self, VALUE kmer) {
     char * str;
     int b,v=-1,p,len;
@@ -102,6 +104,7 @@ VALUE method_get(VALUE self, VALUE kmer) {
     }
 }
 
+// returns a ruby array of counts for each kmer in a read
 VALUE method_median(VALUE self, VALUE read) {
     char * str;
     int b, start,len,v=-1,p;
@@ -127,6 +130,9 @@ VALUE method_median(VALUE self, VALUE read) {
     return array;
 }
 
+//calculates the hashing function on a kmer and the
+// reverse complement of that kmer and takes the larger
+// of the two and return it.
 long hash(char * str, int start, int len, int n) {
     int i;
     long hash=0, hash2=0;
@@ -168,6 +174,7 @@ long hash(char * str, int start, int len, int n) {
     }
 }
 
+// ruby method. returns hash value of a kmer
 VALUE method_hashing(VALUE self, VALUE kmer, VALUE n) {
     char * str;
     int len;
@@ -178,4 +185,8 @@ VALUE method_hashing(VALUE self, VALUE kmer, VALUE n) {
     b = NUM2INT(n);
     output = hash(str, 0, len, b);
     return INT2NUM(output);
+}
+
+VALUE method_kmer_size(VALUE self) {
+    return INT2NUM(kmer_size);
 }

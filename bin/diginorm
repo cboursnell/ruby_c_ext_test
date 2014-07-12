@@ -4,7 +4,7 @@
 # digital normalisation using ruby cm-sketch
 #
 
-require 'mytest.so'
+require 'mytest/mytest.so'
 require 'trollop'
 
 opts = Trollop::options do
@@ -57,9 +57,6 @@ EOS
       :default => 20,
       :type => :int
 end
-
-# Trollop::die :left, "must exist" if !File.exist?(opts[:left])
-# Trollop::die :right, "must exist" if !File.exist?(opts[:right])
 
 cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets)
 k = opts.k
