@@ -21,7 +21,7 @@ long hash(char *, int, int, int);
 
 long set_len;
 int set_count;
-int *set;
+uint8_t *set;
 int kmer_size;
 int *offsets;
 
