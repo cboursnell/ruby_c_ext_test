@@ -7,18 +7,18 @@ class TestMyTest < Test::Unit::TestCase
   context 'my_test' do
 
     setup do
-      @test = MyTest.new(7, 100, 4)
+      @test = MyTest.new(7, 100, 4, 20)
     end
 
     teardown do
     end
 
     should 'add read to cmsketch' do
-      assert_equal 1, @test.add("ACGTACGTACGT")
+      assert_equal 1, @test.radd("ACGTACGTACGT")
     end
 
     should 'get the count of a kmer' do
-      @test.add("GTCGAGGCCGTCAGGCAT")
+      @test.radd("GTCGAGGCCGTCAGGCAT")
       assert_equal 1, @test.get("GTCAGAG") # TCTGACG
     end
 
@@ -27,8 +27,8 @@ class TestMyTest < Test::Unit::TestCase
     end
 
     should 'get the median count' do
-      assert_equal 1, @test.add("TACGTACGTACGTTACGTAC")
-      array = @test.median("AACGTACGTACGTAAACGTA")
+      assert_equal 1, @test.radd("TACGTACGTACGTTACGTAC")
+      array = @test.rmedian("AACGTACGTACGTAAACGTA")
       assert_equal 1, array.sort[array.length/2+1]
 
     end
@@ -40,22 +40,22 @@ class TestMyTest < Test::Unit::TestCase
     end
 
     should 'hash a kmer with large k' do
-      test = MyTest.new(21, 100, 4)
+      test = MyTest.new(21, 100, 4, 20)
       v = test.hashing("ACGTGCATCGATTCGATCGAT", 0)
     end
 
     should 'load in lots of reads and get the median' do
-      test = MyTest.new(21, 200, 4)
+      test = MyTest.new(21, 200, 4, 20)
       left = File.join(File.dirname(__FILE__), 'head.left.fastq')
       right = File.join(File.dirname(__FILE__), 'head.right.fastq')
       count=0
       File.open("#{left}").each_line do |line|
         if count % 4 == 1
           # puts line
-          array = test.median(line.chomp)
+          array = test.rmedian(line.chomp)
           median = array.sort[array.length/2+1]
           if median < 5
-            test.add(line.chomp)
+            test.radd(line.chomp)
           end
         end
         count += 1
