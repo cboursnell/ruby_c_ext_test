@@ -1,7 +1,7 @@
 Gem::Specification.new do |gem|
   gem.name        = 'mytest'
   gem.version     = '0.1'
-  gem.date        = '2014-04-28'
+  gem.date        = '2014-07-11'
   gem.summary     = "Test of Ruby and C in a gem"
   gem.description = "See summary"
   gem.authors     = ["Chris Boursnell"]
