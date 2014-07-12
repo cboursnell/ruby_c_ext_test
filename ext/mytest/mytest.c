@@ -15,6 +15,7 @@ VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
 VALUE method_rmedian(VALUE self, VALUE read);
 VALUE method_kmer_size(VALUE self);
+VALUE method_run(VALUE self, VALUE, VALUE);
 
 long hash(char *, int, int, int);
 
