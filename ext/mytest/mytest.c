@@ -9,7 +9,7 @@ VALUE MyTest = Qnil;
 void Init_mytest();
 
 // methods are prefixed by 'method_' here
-VALUE TestInit(VALUE, VALUE, VALUE, VALUE);
+VALUE TestInit(VALUE, VALUE, VALUE, VALUE, VALUE);
 VALUE method_radd(VALUE, VALUE);
 VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
@@ -92,7 +92,6 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
     size_t len;
     filename_left = StringValueCStr(left);
     filename_right = StringValueCStr(right);
-    cutoff = NUM2INT(c);
 
     outname_left = strdup(filename_left);
     outname_right = strdup(filename_right);
@@ -157,7 +156,7 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
         }
         counter++;
         if (counter % 1000000 == 0) {
-            printf("reads: %lu \t kept: %lu \n ", counter, kept);
+            printf("reads: %lu \t kept: %lu \n ", counter, keeper);
         }
     }
 
