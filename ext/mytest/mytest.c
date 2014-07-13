@@ -155,8 +155,8 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
             keeper++;
         }
         counter++;
-        if (counter % 1000000 == 0) {
-            printf("reads: %lu \t kept: %lu \n ", counter, keeper);
+        if (counter % 500000 == 0) {
+            printf("reads: %lu \t kept: %lu \n", counter, keeper);
         }
     }
 
