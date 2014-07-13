@@ -72,6 +72,7 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count, VALUE cut)
 // take in two input files and export two output files
 VALUE method_run(VALUE self, VALUE left, VALUE right) {
     int med1, med2;
+    long keeper, counter;
     FILE *lfp;
     FILE *rfp;
     FILE *lout;
@@ -126,6 +127,8 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
         printf("Error opening right output file for writing\n");
         exit(1);
     }
+    counter = 0;
+    keeper = 0;
     while ( getline(&line_name1, &len, lfp) != -1 ) {
         getline(&line_seq1, &len, lfp);
         getline(&line_plus1, &len, lfp);
@@ -150,6 +153,11 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
             fprintf(rout,"%s",line_seq2);
             fprintf(rout,"%s",line_plus2);
             fprintf(rout,"%s",line_qual2);
+            keeper++;
+        }
+        counter++;
+        if (counter % 1000000 == 0) {
+            printf("reads: %lu \t kept: %lu \n ", counter, kept);
         }
     }
 
