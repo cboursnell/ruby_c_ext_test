@@ -60,18 +60,7 @@ end
 
 Trollop::die "Cutoff must be less than 255" if opts.cutoff >= 255
 
-cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets)
-k = opts.k
-
-def ticker(i,speed,j)
-  n = 10**speed
-  if i % n == 0 and i > 0
-    str = "reads: #{i}"
-    str << " "*(19-str.length)
-    str << "kept: #{(100*j).round(1)}%" if !j.nan?
-    puts str
-  end
-end
+cms = MyTest.new(opts.k, opts.bucket_size, opts.buckets, opts.cutoff)
 
 input = opts.left.split(",").zip(opts.right.split(","))
 
@@ -84,49 +73,6 @@ input.each do |pair|
   end
 end
 
-count = 0
-added = 0
-File.open("#{opts.output}.1.fastq", "w") do |out1|
-  File.open("#{opts.output}.2.fastq", "w") do |out2|
-    input.each do |pair|
-      left = File.open(pair[0])
-      right = File.open(pair[1])
-      name1 = left.readline rescue nil
-      name2 = right.readline rescue nil
-      while name1 != nil and name2 != nil
-        seq1 = left.readline
-        plus1 = left.readline
-        quals1 = left.readline
-        seq2 = right.readline
-        plus2 = right.readline
-        quals2 = right.readline
-        if seq1.length > k+2
-          array1 = cms.rmedian(seq1)
-          median1 = array1.sort[array1.length/2+1]
-        else
-          median1 = 0
-        end
-        if seq2.length > k+2
-          array2 = cms.rmedian(seq2)
-          median2 = array2.sort[array2.length/2+1]
-        else
-          median2 = 0
-        end
-        ticker(count, 5, added/count.to_f)
-        if median1 and median2
-          if median1 <= opts.cutoff or median2 <= opts.cutoff
-            cms.radd(seq1)
-            cms.radd(seq2)
-
-            out1.write "#{name1}#{seq1}+\n#{quals1}"
-            out2.write "#{name2}#{seq2}+\n#{quals2}"
-            added += 1
-          end
-        end
-        name1 = left.readline rescue nil
-        name2 = right.readline rescue nil
-        count += 1
-      end
-    end
-  end
+input.each do |pair|
+  cms.run(pair[0], pair[1]) # call to c
 end
