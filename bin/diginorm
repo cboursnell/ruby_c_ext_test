@@ -27,8 +27,7 @@ EOS
       :type => String
 
   opt :right,
-      "Comma separated list of fastq files (right)",
-      :required => true,
+      "Comma separated list of fastq files (right) (optional)",
       :type => String
 
   opt :k,
@@ -36,13 +35,13 @@ EOS
       :default => 21,
       :type => :int
 
-  opt :buckets,
-      "number of buckets",
+  opt :tables,
+      "number of tables",
       :default => 4,
       :type => :int
 
-  opt :bucket_size,
-      "size of buckets",
+  opt :table_size,
+      "size of tables",
       :short => 's',
       :type => :int
 
@@ -58,42 +57,61 @@ EOS
 
 end
 
-if !opts.memory and !opts.bucket_size
-  Trollop::die "Must set either memory usage or bucket size"
+if !opts.memory and !opts.table_size
+  Trollop::die "Must set either memory usage or table size"
 end
 
 Trollop::die "Cutoff must be less than 255" if opts.cutoff >= 255
 
-if opts.bucket_size
-  memory = opts.bucket_size * opts.buckets
-  bucket_size = opts.bucket_size
+if opts.table_size
+  memory = opts.table_size * opts.tables
+  table_size = opts.table_size
 elsif opts.memory
-  bucket_size = (1e9*opts.memory/opts.buckets).to_i
+  table_size = (1e9*opts.memory/opts.tables).to_i
   memory = (1e9*opts.memory).to_i
 end
 
-puts "memory = #{memory}"
-puts "bucket_size = #{bucket_size}"
+puts "memory : #{memory/1e9}GB"
+puts "table size : #{table_size/1e9} billion"
 
-cms = MyTest.new(opts.k, bucket_size, opts.buckets, opts.cutoff)
+cms = MyTest.new(opts.k, table_size, opts.tables, opts.cutoff)
 
-input = opts.left.split(",").zip(opts.right.split(","))
+paired = false
+if opts.right
+  input = opts.left.split(",").zip(opts.right.split(","))
+  paired = true
+else
+  input = opts.left.split(",")
+end
 
 input.each do |pair|
-  unless File.exist?("#{pair[0]}")
-    raise IOError.new("File not found: #{pair[0]}")
-  end
-  unless File.exist?("#{pair[1]}")
-    raise IOError.new("File not found: #{pair[1]}")
-  end
-  if File.exist?("#{pair[0]}.out")
-    raise IOError.new("Output already exists: #{pair[0]}.out")
-  end
-  if File.exist?("#{pair[1]}.out")
-    raise IOError.new("Output already exists: #{pair[1]}.out")
+  if paired
+    unless File.exist?("#{pair[0]}")
+      raise IOError.new("File not found: #{pair[0]}")
+    end
+    unless File.exist?("#{pair[1]}")
+      raise IOError.new("File not found: #{pair[1]}")
+    end
+    if File.exist?("#{pair[0]}.out")
+      raise IOError.new("Output already exists: #{pair[0]}.out")
+    end
+    if File.exist?("#{pair[1]}.out")
+      raise IOError.new("Output already exists: #{pair[1]}.out")
+    end
+  else
+    unless File.exist?("#{pair}")
+      raise IOError.new("File not found: #{pair}")
+    end
+    if File.exist?("#{pair}.out")
+      raise IOError.new("Output already exists: #{pair}.out")
+    end
   end
 end
 
 input.each do |pair|
-  cms.run(pair[0], pair[1]) # call to c
+  if paired
+    cms.run_pair(pair[0], pair[1]) # call to c
+  else
+    cms.run(pair)
+  end
 end
