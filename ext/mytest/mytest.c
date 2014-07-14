@@ -15,7 +15,8 @@ VALUE method_get(VALUE, VALUE);
 VALUE method_hashing(VALUE, VALUE, VALUE);
 VALUE method_rmedian(VALUE self, VALUE read);
 VALUE method_kmer_size(VALUE self);
-VALUE method_run(VALUE self, VALUE, VALUE);
+VALUE method_run_pair(VALUE self, VALUE, VALUE);
+VALUE method_run(VALUE self, VALUE);
 
 long hash(char *, int, int, int);
 uint8_t median(char *);
@@ -38,7 +39,8 @@ void Init_mytest() {
     rb_define_method(MyTest, "hashing", method_hashing, 2);
     rb_define_method(MyTest, "rmedian", method_rmedian, 1);
     rb_define_method(MyTest, "kmer_size", method_kmer_size, 0);
-    rb_define_method(MyTest, "run", method_run, 2);
+    rb_define_method(MyTest, "run_pair", method_run_pair, 2);
+    rb_define_method(MyTest, "run", method_run, 1);
 }
 
 // called when creating a new class
@@ -69,8 +71,69 @@ VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count, VALUE cut)
     return Qnil;
 }
 
+// take in input file and export output file
+VALUE method_run(VALUE self, VALUE left) {
+    int med1;
+    long keeper, counter;
+    FILE *lfp;
+    FILE *lout;
+    char * line_name1 = NULL;
+    char * line_seq1 = NULL;
+    char * line_plus1 = NULL;
+    char * line_qual1 = NULL;
+    char * filename_left;
+    char * outname_left;
+    size_t len;
+    filename_left = StringValueCStr(left);
+
+    outname_left = strdup(filename_left);
+
+    strcat(outname_left, ".out");
+
+    lfp = fopen(filename_left, "r");
+
+    if (lfp == NULL) {
+      fprintf(stderr, "Can't open left read file\n");
+      exit(1);
+    }
+    lout = fopen(outname_left, "w");
+    if (lout == NULL) {
+        printf("Error opening left output file for writing\n");
+        exit(1);
+    }
+    counter = 0;
+    keeper = 0;
+    while ( getline(&line_name1, &len, lfp) != -1 ) {
+        getline(&line_seq1, &len, lfp);
+        getline(&line_plus1, &len, lfp);
+        getline(&line_qual1, &len, lfp);
+
+        med1 = median(line_seq1);
+
+        if (med1 < cutoff ) {
+            add(line_seq1);
+            fprintf(lout,"%s",line_name1);
+            fprintf(lout,"%s",line_seq1);
+            fprintf(lout,"%s",line_plus1);
+            fprintf(lout,"%s",line_qual1);
+
+            keeper++;
+        }
+        counter++;
+        if (counter % 500000 == 0) {
+            printf("reads: %lu \t kept: %lu \n", counter, keeper);
+        }
+    }
+
+    fclose(lfp);
+
+    fclose(lout);
+
+    return INT2NUM(0);
+}
+
 // take in two input files and export two output files
-VALUE method_run(VALUE self, VALUE left, VALUE right) {
+VALUE method_run_pair(VALUE self, VALUE left, VALUE right) {
     int med1, med2;
     long keeper, counter;
     FILE *lfp;
@@ -98,11 +161,6 @@ VALUE method_run(VALUE self, VALUE left, VALUE right) {
 
     strcat(outname_left, ".out");
     strcat(outname_right, ".out");
-
-    // printf("in  left  = %s \n", filename_left);
-    // printf("in  right = %s \n", filename_right);
-    // printf("out  left  = %s \n", outname_left);
-    // printf("out  right = %s \n", outname_right);
 
     lfp = fopen(filename_left, "r");
     rfp = fopen(filename_right, "r");
