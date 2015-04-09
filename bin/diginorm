@@ -72,7 +72,7 @@ elsif opts.memory
 end
 
 puts "memory : #{memory/1e9}GB"
-puts "table size : #{table_size/1e9} billion"
+puts "table size : #{(table_size/1e6).round(3)} million"
 
 cms = MyTest.new(opts.k, table_size, opts.tables, opts.cutoff)
 

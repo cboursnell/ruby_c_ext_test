@@ -20,6 +20,7 @@ VALUE method_run(VALUE self, VALUE);
 
 long hash(char *, int, int, int);
 uint8_t median(char *);
+uint8_t minimum(char *);
 void add(char *);
 
 long set_len;
@@ -47,8 +48,7 @@ void Init_mytest() {
 // ks = size of kmer to use in bases
 // size = length of array
 // count = number of buckets
-VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count, VALUE cut)
-{
+VALUE TestInit(VALUE self, VALUE ks, VALUE size, VALUE count, VALUE cut) {
     int i;
     set_len = NUM2INT(size);
     set_count = NUM2INT(count);
@@ -195,10 +195,13 @@ VALUE method_run_pair(VALUE self, VALUE left, VALUE right) {
         getline(&line_plus2, &len, rfp);
         getline(&line_qual2, &len, rfp);
 
-        med1 = median(line_seq1);
-        med2 = median(line_seq2);
+        // med1 = median(line_seq1);
+        // med2 = median(line_seq2);
+        med1 = minimum(line_seq1);
+        med2 = minimum(line_seq2);
 
-        if (med1 < cutoff || med2 < cutoff) {
+        if (med1 == 0 || med2 == 0) { // only keep the read if one or more
+                                      // of the kmers haven't been seen before
             add(line_seq1);
             add(line_seq2);
             fprintf(lout,"%s",line_name1);
@@ -287,6 +290,28 @@ VALUE method_get(VALUE self, VALUE kmer) {
     } else {
         return 0;
     }
+}
+
+
+uint8_t minimum(char * read) {
+    int b,start,len;
+    uint8_t v=255,p,minimum=255;
+    long h;
+    len = strlen(read) - kmer_size;
+    for (start = 0; start < len; start++) {
+        v = 255;
+        for (b = 0; b < set_count; b++) {
+            h = hash(read, start, kmer_size, b);
+            p = set[b*set_len+h];
+            if (p < v) { // this is the min part of count-min-sketch
+                v = p;
+            }
+        }
+        if (v < minimum) {
+            minimum = v;
+        }
+    }
+    return minimum;
 }
 
 uint8_t median(char * read) {
